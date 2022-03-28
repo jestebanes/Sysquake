@@ -1,0 +1,137 @@
+//Second order function with cero
+use stdlib
+
+variable k, wn, d, a  // G(s)= (k*(s+a))/(s^2+2*d*wn*s+wn^2) 
+variable xmin, xmax, ymin, ymax //scale varaibles
+
+init (k,wn,d,a,xmin,xmax,ymin,ymax) = init
+
+figure "Bode diagram"
+  draw drawBode(k, wn, d, a)
+
+figure "Second Order Function with cero"
+  draw drawControls(k, wn, d, a)
+  mousedrag(k, wn, d, a) = dragControls(k, wn, d, a, _id, _x1)
+  
+figure "Pole-zero map"
+  draw drawFunc(k, wn, d, a, xmin, xmax, ymin, ymax)
+  
+figure "Step response"
+  draw drawStep(k, wn, d, a)
+
+function
+{@
+function (k,wn,d,a,xmin,xmax,ymin,ymax) = init
+  // initial values for the function coefficients
+  k = 1;
+  wn = 1;
+  d = 1;
+  a = 1;
+  xmin=-1;
+  xmax=0;
+  ymin=-1;
+  ymax=1;
+  subplots(['Second Order Function with cero\tBode diagram\nPole-zero map\tStep response']);
+  // roots are displayed as x for poles
+
+function drawControls(k, wn, d, a)
+  settabs([5,25]);
+
+  text('$G(s)=\\frac{k(s+a)}{s^{^{2}}+2\\delta \\omega_{n}s+\\omega_{n}^{2}}$');
+  text('\n');
+  textfield('K', '%.2f', k, 'rgb', id=1);
+  slider('\t', k, [-1000,1000],'-', '', id=1);
+  
+  textfield('${\\omega}_n$', '%.3f', wn, 'rgb', id=2);
+  slider('\t', wn, [0.1,10000],'L', '', id=2);
+  
+  textfield('${\\delta}$', '%.1f', d, 'rgb', id=3);
+  slider('\t', d, [0,1],'-', '', id=3);
+  
+  textfield('a', '%.2f', a, 'rgb', id=4);
+  slider('\t', a, [-100,100],'-', '', id=4);
+  
+  plotoption math;
+
+function(k, wn, d, a) = dragControls(k, wn, d, a, id, x1)
+  if isempty(id)
+    cancel;
+  end
+  switch id
+    case 1
+      k = x1;
+    case 2
+      wn = x1;
+    case 3
+      d = x1;
+    case 4
+      a = x1;
+  end
+
+function (xmin,xmax,ymin,ymax) = drawFunc(k, wn, d, a, xmin, xmax, ymin, ymax)
+  // plot the rlocus
+  (xmin, xmax, ymin, ymax)=drawRoots([1 2*wn*d wn^2], 'x', xmin, xmax, ymin, ymax);
+  drawRoots([1 a], 'o', xmin, xmax, ymin, ymax);
+  label Re Im;
+  plotoption math;
+  
+function (xmin,xmax,ymin,ymax) = drawRoots(pol, c, xmin, xmax, ymin, ymax)
+  //fprintf('Size: %d\n', size(roots(pol)));
+  q = roots(pol);
+  if isreal(q)
+    if xmax < max(q)
+      xmax = max(q);
+    end
+    if xmin > min(q)
+      xmin = min(q);
+    end
+    //fprintf('q real:%f;', real(q));
+    //fprintf(' MinX %f:',xmin);
+    //fprintf(' MaxX %f:',xmax);
+    //fprintf(' MinY %f:',ymin);
+    //fprintf(' MaxY %f\n\n',ymax);
+  else
+    if xmax < max(real(q))
+      xmax = max(real(q));
+    end
+    if xmin > min(real(q))
+      xmin = min(real(q));
+    end
+    if ymax < abs(max(imag(q)))
+      ymax = abs(max(imag(q)));
+      ymin = -1*ymax;
+    end
+    //fprintf('q complex:%f,%fj',real(q)(1,1), imag(q)(1,1));
+    //fprintf(' MinX %f:',xmin);
+    //fprintf(' MaxX %f:',xmax);
+    //fprintf(' MinY %f:',ymin);
+    //fprintf(' MaxY %f\n\n',ymax);
+  end
+  
+  scale('equal',[xmin*(1.1), xmax*(1.1), ymin*(1.1), ymax*(1.1)]);
+  for p = roots(pol)
+    if p == 0
+      plot(0, 0, c);
+    elseif isreal(p)
+      plot(p, 0, c);
+    else
+      plot(real(p), imag(p), c);
+      plot(real(p), -imag(p), c);
+    end
+  end
+  
+
+function drawBode(k, wn, d, a)
+  scale('logdb');
+  bodemag(k*[1 a],[1 2*wn*d wn^2], 'r');
+  label w;
+
+  plotoption math;
+  
+function drawStep(k, wn, d, a)
+  step(k*[1 a],[1 2*wn*d wn^2], 'g');
+  label t;
+  
+  plotoption math;
+
+@}
