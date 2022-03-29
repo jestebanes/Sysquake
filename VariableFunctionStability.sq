@@ -1,0 +1,154 @@
+//Second order function with cero
+use stdlib
+
+variable xmin, xmax, ymin, ymax //scale varaibles
+variable num   // Coefficients [nx,..,n1,n0] of numerator nx*s^x+...+n1*s+n0
+variable den   // Coefficients [nx,..,n1,n0] of denominator nx*s^x+...+n1*s+n0
+variable sys  // transfer function 
+
+init (num,den,xmin,xmax,ymin,ymax) = init
+
+menu "Coeficients for numerator..."
+  (num) = menuNum(num)
+menu "Coeficients for denominator..."
+  (den) = menuDen(den)
+
+figure "Bode diagram"
+  draw drawBode(num, den)
+  
+figure "Bode phase"
+  draw drawBodePhase(num, den)
+
+figure "Nyquist"
+  draw drawNyquist(num, den)
+  
+figure "Transfer function"
+  draw drawControls(num, den)
+  mousedrag(num, den) = dragControls(num, den, _id, _x1)
+  
+figure "Pole-zero map"
+  draw drawFunc(num, den, xmin, xmax, ymin, ymax)
+  
+figure "Step response"
+  draw drawStep(num, den)
+
+function
+{@
+function (num,den,xmin,xmax,ymin,ymax) = init
+  // initial values for the function coefficients
+  num=[0 0 0 0 0 1];
+  den=[0 0 0 1 2 1];
+  xmin=-1;
+  xmax=0;
+  ymin=-1;
+  ymax=1;
+  subplots(['Transfer function\tBode diagram\nPole-zero map\tBode phase\nNyquist\tStep response']);
+  // roots are displayed as x for poles
+
+function drawControls(num, den)
+  settabs([5,25]);
+
+  s = sprintf('$G(s)=\\frac{%.2fs^{^{5}} + %.2fs^{^{4}} + %.2fs^{^{3}} + %.2fs^{^{2}} + %.2fs + %.2f}{%.2fs^{^{5}} + %.2fs^{^{4}} + %.2fs^{^{3}} + %.2fs^{^{2}} + %.2fs + %.2f}$\n\n',num, den);
+  text(s);
+
+  plotoption math;
+
+function(num, den) = dragControls(num, den, id, x1)
+  if isempty(id)
+    cancel;
+  end
+  switch id
+    
+  end
+
+function (num) = menuNum(num)
+  (num) ...
+   = dialog('Coefficients [n5,..,n1,n0] of nx*s^5+...+n1*s+n0',num);
+
+function (den) = menuDen(den)
+  (den) ...
+   = dialog('Coefficients [n5,..,n1,n0] of nx*s^5+...+n1*s+n0',den);
+   
+function (xmin,xmax,ymin,ymax) = drawFunc(num, den, xmin, xmax, ymin, ymax)
+  // plot the rlocus
+  (xmin,xmax,ymin,ymax) = drawRoots(num, 'o', xmin, xmax, ymin, ymax);
+  drawRoots(den, 'x', xmin, xmax, ymin, ymax);
+  label Re Im;
+  plotoption math;
+  
+function (xmin,xmax,ymin,ymax) = drawRoots(pol, c, xmin, xmax, ymin, ymax)
+  //fprintf('Size: %d\n', size(roots(pol)));
+  q = roots(pol);
+  if isreal(q)
+    if xmax < max(q)
+      xmax = max(q);
+    end
+    if xmin > min(q)
+      xmin = min(q);
+    end
+    fprintf('q real:%f;', real(q));
+    fprintf(' MinX %f:',xmin);
+    fprintf(' MaxX %f:',xmax);
+    fprintf(' MinY %f:',ymin);
+    fprintf(' MaxY %f\n\n',ymax);
+  else
+    if xmax < max(real(q))
+      xmax = max(real(q));
+    end
+    if xmin > min(real(q))
+      xmin = min(real(q));
+    end
+    if ymax < abs(max(imag(q)))
+      ymax = abs(max(imag(q)));
+      ymin = -1*ymax;
+    end
+    fprintf('q complex:%f,%fj',real(q)(1,1), imag(q)(1,1));
+    fprintf(' MinX %f:',xmin);
+    fprintf(' MaxX %f:',xmax);
+    fprintf(' MinY %f:',ymin);
+    fprintf(' MaxY %f\n\n',ymax);
+  end
+  
+  scale('equal',[xmin*(1.1), xmax*(1.1), ymin*(1.1), ymax*(1.1)]);
+  for p = roots(pol)
+    if p == 0
+      plot(0, 0, c);
+    elseif isreal(p)
+      plot(p, 0, c);
+    else
+      plot(real(p), imag(p), c);
+      plot(real(p), -imag(p), c);
+    end
+  end
+  
+
+function drawBode(num, den)
+  scale('logdb');
+  bodemag(num,den, 'r');
+  line([0,1],1,'g');
+  label w;
+
+  plotoption math;
+
+function drawBodePhase(num, den)
+  scale('loglin');
+  bodephase(num,den, 'b');
+  line([0,1],-3.1415926,'g');
+  label w;
+
+  plotoption math;
+
+function drawNyquist(num, den)
+  scale equal;
+  nyquist(num,den-num, 'b');
+  plot(-1, 0, 'xr');
+
+  plotoption math;
+
+function drawStep(num, den)
+  step(num,den, 'g');
+  label t;
+  
+  plotoption math;
+
+@}
